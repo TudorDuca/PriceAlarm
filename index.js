@@ -8,6 +8,31 @@ const fs = require('fs');
 const app = express();
 const port = 3000;
 
+// File to store alarms persistently
+const ALARMS_FILE = 'alarms.json';
+
+// Load alarms from file
+function loadAlarms() {
+    try {
+        if (fs.existsSync(ALARMS_FILE)) {
+            const data = fs.readFileSync(ALARMS_FILE, 'utf8');
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        console.log('Error loading alarms:', error.message);
+    }
+    return [];
+}
+
+// Save alarms to file
+function saveAlarms() {
+    try {
+        fs.writeFileSync(ALARMS_FILE, JSON.stringify(alarms, null, 2));
+    } catch (error) {
+        console.log('Error saving alarms:', error.message);
+    }
+}
+
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public')); // Serve static files
@@ -15,17 +40,20 @@ app.use(express.static('public')); // Serve static files
 // Built-in alarm sounds - no file upload needed
 const builtInSounds = [
     { value: 'alarm-beep.mp3', label: '🚨 Classic Alarm' },
-    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📢 Siren' },
-    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '🔔 Bell' },
-    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📯 Horn' }
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📢 Siren' },
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '🔔 Bell' },
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📯 Horn' }
 ];
 
-let alarms = [];
-let nextId = 1;
+let alarms = loadAlarms();
+let nextId = alarms.length > 0 ? Math.max(...alarms.map(a => a.id)) + 1 : 1;
+
+let triggeredAlarms = [];
 
 // --- Routes ---
 
 app.get('/', (req, res) => {
+    console.log('Rendering index with alarms:', alarms.length, alarms);
     res.render('index', { alarms });
 });
 
@@ -37,7 +65,7 @@ app.post('/add', (req, res) => {
         const newAlarm = {
             id: nextId++,
             tokenAddress,
-            sound: sound || 'beep',
+            sound: sound || 'alarm-beep.mp3',
             triggerType: triggerType || 'price',
         };
         if (newAlarm.triggerType === 'price') {
@@ -46,8 +74,10 @@ app.post('/add', (req, res) => {
             newAlarm.marketCap = parseFloat(marketCap);
         }
         alarms.push(newAlarm);
+        saveAlarms(); // Save to file
         console.log('Added new alarm:', newAlarm);
         console.log('Total alarms:', alarms.length);
+        saveAlarms();
     } else {
         console.log('Invalid alarm data - missing required fields');
     }
@@ -77,12 +107,14 @@ app.post('/edit/:id', (req, res) => {
             alarm.marketCap = parseFloat(marketCap);
             delete alarm.price;
         }
+        saveAlarms();
     }
     res.redirect('/');
 });
 
 app.get('/delete/:id', (req, res) => {
     alarms = alarms.filter(a => a.id !== parseInt(req.params.id));
+    saveAlarms();
     res.redirect('/');
 });
 
@@ -136,8 +168,6 @@ app.get('/debug', (req, res) => {
         triggered: triggeredAlarms
     });
 });
-
-let triggeredAlarms = [];
 
 // --- Price Checking Logic ---
 
@@ -224,6 +254,7 @@ async function checkPrices() {
                 
                 // Remove alarm after it triggers
                 alarms = alarms.filter(a => a.id !== alarm.id);
+                saveAlarms();
             }
         } catch (error) {
             console.error(`Error checking price for ${alarm.tokenAddress}:`, error.message);

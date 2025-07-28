@@ -419,7 +419,13 @@
                                 </span>
                             </div>
                             <div class="sound-type">
-                                🔊 Sound: <%= alarm.sound %>
+                                <% if (alarm.sound === 'alarm-beep.mp3') { %>
+                                    🚨 Classic Alarm
+                                <% } else if (alarm.sound.startsWith('data:audio/wav')) { %>
+                                    🔊 Built-in Sound
+                                <% } else { %>
+                                    🎵 Custom Sound
+                                <% } %>
                             </div>
                             <div class="actions">
                                 <a href="/edit/<%= alarm.id %>" class="btn btn-edit">Edit</a>
@@ -467,11 +473,8 @@
                     <label for="sound">Alarm Sound</label>
                     <select id="sound" name="sound">
                         <option value="beep">🔔 Classic Beep</option>
-                        <option value="siren">🚨 Emergency Siren</option>
-                        <option value="horn">📯 Air Horn</option>
-                        <option value="bell">🔔 Bell Chime</option>
                         <option value="alarm-beep.mp3">🚨 Classic Alarm</option>
-                        <option value="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp">📢 Siren</option>
+                        <option value="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp">📢 Siren</option>
                         <option value="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp">🔔 Bell</option>
                         <option value="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp">📯 Horn</option>
                     </select>
