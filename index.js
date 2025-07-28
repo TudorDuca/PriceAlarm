@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 const { exec } = require('child_process');
 const path = require('path');
-const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
@@ -13,37 +12,13 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public')); // Serve static files
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'public/custom-sounds/');
-    },
-    filename: function (req, file, cb) {
-        // Generate unique filename
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'custom-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ 
-    storage: storage,
-    fileFilter: function (req, file, cb) {
-        // Accept only audio files
-        if (file.mimetype.startsWith('audio/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only audio files are allowed!'), false);
-        }
-    },
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    }
-});
-
-// Create custom sounds directory if it doesn't exist
-if (!fs.existsSync('public/custom-sounds')) {
-    fs.mkdirSync('public/custom-sounds', { recursive: true });
-}
+// Built-in alarm sounds - no file upload needed
+const builtInSounds = [
+    { value: 'alarm-beep.mp3', label: '🚨 Classic Alarm' },
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📢 Siren' },
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '🔔 Bell' },
+    { value: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp66hVFApGn+DyvmkbBz2O0fLNeSsFJXfH8N2QQAoUXrTp', label: '📯 Horn' }
+];
 
 let alarms = [];
 let nextId = 1;
@@ -262,36 +237,9 @@ async function checkPrices() {
 // Check prices every 15 seconds
 setInterval(checkPrices, 15000);
 
-// Upload custom sound
-app.post('/upload-sound', upload.single('soundFile'), (req, res) => {
-    if (req.file) {
-        const customSoundPath = '/custom-sounds/' + req.file.filename;
-        res.json({ 
-            success: true, 
-            soundPath: customSoundPath,
-            filename: req.file.filename,
-            originalName: req.file.originalname
-        });
-    } else {
-        res.status(400).json({ success: false, error: 'No file uploaded' });
-    }
-});
-
-// Get list of custom sounds
-app.get('/api/custom-sounds', (req, res) => {
-    const customSoundsDir = 'public/custom-sounds';
-    if (fs.existsSync(customSoundsDir)) {
-        const files = fs.readdirSync(customSoundsDir)
-            .filter(file => /\.(mp3|wav|ogg|m4a)$/i.test(file))
-            .map(file => ({
-                filename: file,
-                path: '/custom-sounds/' + file,
-                name: file.replace(/^custom-\d+-\d+-/, '').replace(/\.[^.]+$/, '')
-            }));
-        res.json(files);
-    } else {
-        res.json([]);
-    }
+// Get available alarm sounds
+app.get('/api/sounds', (req, res) => {
+    res.json(builtInSounds);
 });
 
 app.listen(port, () => {
