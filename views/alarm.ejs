@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 PRICE ALARM TRIGGERED! 🚨</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #ff0000, #ff6600, #ff0000, #ff6600);
+            background-size: 400% 400%;
+            animation: gradient 0.5s ease infinite;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .alarm-container {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #fff;
+            animation: shake 0.5s infinite;
+            max-width: 600px;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin: 0 0 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        .message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+        
+        .timestamp {
+            font-size: 1em;
+            opacity: 0.8;
+            margin: 20px 0;
+        }
+        
+        .stop-button {
+            background: #ff0000;
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .stop-button:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+        
+        .volume-warning {
+            font-size: 1.2em;
+            color: #ffff00;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="alarm-container">
+        <h1>🚨 ALARM TRIGGERED! 🚨</h1>
+        
+        <div class="volume-warning">
+            ⚠️ TURN UP YOUR VOLUME! ⚠️
+        </div>
+        
+        <div class="message">
+            <%= alarm.message %>
+        </div>
+        
+        <div class="timestamp">
+            Triggered at: <%= alarm.timestamp %>
+        </div>
+        
+        <div class="token-info">
+            Token: <%= alarm.tokenAddress.substring(0, 8) %>...
+        </div>
+        
+        <button class="stop-button" onclick="stopAlarm()">
+            STOP ALARM
+        </button>
+        
+        <div style="margin-top: 20px;">
+            <a href="/" style="color: #ffff00; text-decoration: none;">
+                Return to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Audio elements for alarm sounds -->
+    <audio id="alarmSound" loop>
+        <source src="/alarm-beep.mp3" type="audio/mpeg">
+        <source src="/custom-sounds/<%= alarm.sound || 'beep' %>.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Backup audio element for custom sounds -->
+    <audio id="customAlarmSound" loop style="display: none;"></audio>
+
+    <script>
+        let audioContext;
+        let oscillator;
+        let gainNode;
+        let isPlaying = true;
+
+        // Create different alarm sounds using Web Audio API + HTML5 Audio
+        function createAlarmSound(type) {
+            const audio = document.getElementById('alarmSound');
+            const customAudio = document.getElementById('customAlarmSound');
+            
+            // First try to play HTML5 audio
+            if (type && type.startsWith('custom-')) {
+                // Custom uploaded sound
+                customAudio.src = '/custom-sounds/' + type;
+                customAudio.volume = 1.0;
+                customAudio.loop = true;
+                customAudio.play().catch(() => console.log('Custom audio blocked'));
+            } else {
+                // Built-in sounds
+                let audioSrc = '';
+                switch(type) {
+                    case 'siren':
+                    case 'horn':
+                    case 'bell':
+                    case 'alarm':
+                        audioSrc = '/alarm-beep.mp3'; // Use the same file for now
+                        break;
+                    default:
+                        audioSrc = '/alarm-beep.mp3';
+                }
+                audio.src = audioSrc;
+                audio.volume = 1.0;
+                audio.play().catch(() => console.log('Audio autoplay blocked'));
+            }
+            
+            // Also create Web Audio API sound as backup
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                oscillator = audioContext.createOscillator();
+                gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                
+                switch(type) {
+                    case 'siren':
+                        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                        setInterval(() => {
+                            if (isPlaying && oscillator) {
+                                oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.5);
+                                setTimeout(() => {
+                                    if (oscillator) oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
+                                }, 500);
+                            }
+                        }, 1000);
+                        break;
+                    case 'horn':
+                        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                        setInterval(() => {
+                            if (isPlaying && oscillator) {
+                                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                                setTimeout(() => {
+                                    if (oscillator) oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                                }, 150);
+                                setTimeout(() => {
+                                    if (oscillator) oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                                }, 300);
+                            }
+                        }, 600);
+                        break;
+                    case 'bell':
+                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                        setInterval(() => {
+                            if (isPlaying && oscillator) {
+                                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                                setTimeout(() => {
+                                    if (gainNode) gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                                }, 500);
+                            }
+                        }, 800);
+                        break;
+                    case 'alarm':
+                        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+                        setInterval(() => {
+                            if (isPlaying && oscillator) {
+                                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime);
+                                gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.1);
+                                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime + 0.2);
+                                gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.3);
+                                gainNode.gain.setValueAtTime(0.8, audioContext.currentTime + 0.4);
+                            }
+                        }, 800);
+                        break;
+                    default: // beep
+                        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                        setInterval(() => {
+                            if (isPlaying && oscillator) {
+                                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                                setTimeout(() => {
+                                    if (oscillator) oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+                                }, 200);
+                            }
+                        }, 400);
+                }
+                
+                oscillator.start();
+            } catch (error) {
+                console.log('Web Audio API not supported');
+            }
+        }
+
+        // Start alarm immediately
+        document.addEventListener('DOMContentLoaded', function() {
+            // Request notification permission
+            if ('Notification' in window) {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        new Notification('🚨 PRICE ALARM TRIGGERED! 🚨', {
+                            body: '<%= alarm.message %>',
+                            icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+                            requireInteraction: true,
+                            silent: false
+                        });
+                    }
+                });
+            }
+
+            // Start alarm sound
+            createAlarmSound('<%= alarm.sound || "beep" %>');
+            
+            // Try to focus the window
+            window.focus();
+            
+            // Vibrate if supported (mobile)
+            if (navigator.vibrate) {
+                setInterval(() => {
+                    if (isPlaying) {
+                        navigator.vibrate([200, 100, 200, 100, 200]);
+                    }
+                }, 1000);
+            }
+        });
+
+        function stopAlarm() {
+            isPlaying = false;
+            
+            // Stop Web Audio API sound
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            
+            // Stop HTML5 audio
+            const audio = document.getElementById('alarmSound');
+            const customAudio = document.getElementById('customAlarmSound');
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+            if (customAudio) {
+                customAudio.pause();
+                customAudio.currentTime = 0;
+            }
+            
+            // Send request to server to remove from triggered alarms
+            fetch('/stop-alarm/<%= alarm.id %>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }).then(() => {
+                window.location.href = '/';
+            }).catch(() => {
+                window.location.href = '/';
+            });
+        }
+
+        // Prevent page from being closed accidentally
+        window.addEventListener('beforeunload', function(e) {
+            if (isPlaying) {
+                e.preventDefault();
+                e.returnValue = 'Alarm is still active!';
+                return 'Alarm is still active!';
+            }
+        });
+
+        // Keep trying to play sound every few seconds in case it gets blocked
+        setInterval(() => {
+            if (isPlaying) {
+                const audio = document.getElementById('alarmSound');
+                if (audio && audio.paused) {
+                    audio.play().catch(() => {
+                        console.log('Audio autoplay blocked');
+                    });
+                }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
