@@ -1,0 +1,34 @@
+{
+  "user_1753664690155_x9oxex9z4": [],
+  "user_1753664696552_70s0zto2u": [
+    {
+      "id": 1,
+      "tokenAddress": "erherh34",
+      "sound": "beep",
+      "triggerType": "price",
+      "userId": "user_1753664696552_70s0zto2u",
+      "price": 436
+    }
+  ],
+  "user_1753664861698_drj6ebey9": [],
+  "user_1753664877416_phhczv3pc": [
+    {
+      "id": 2,
+      "tokenAddress": "HJscezZZzrk8kvQcnjvBHEXRt4DfvHCKMcEHsmAibonk",
+      "sound": "alarm-beep.mp3",
+      "triggerType": "marketCap",
+      "userId": "user_1753664877416_phhczv3pc",
+      "marketCap": 150000
+    }
+  ],
+  "user_1753664896158_j59gzkldn": [
+    {
+      "id": 3,
+      "tokenAddress": "HJscezZZzrk8kvQcnjvBHEXRt4DfvHCKMcEHsmAibonk",
+      "sound": "beep",
+      "triggerType": "price",
+      "userId": "user_1753664896158_j59gzkldn",
+      "price": 124
+    }
+  ]
+}
